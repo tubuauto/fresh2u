@@ -14,7 +14,7 @@ This project follows `AGENTS.md` as source of truth and implements:
 ## 1) Architecture Plan
 
 See the complete plan and exact enums in:
-- [docs/architecture-plan.md](F:\codex\fresh2u\docs\architecture-plan.md)
+- `docs/architecture-plan.md`
 
 ## 2) Project Structure
 
