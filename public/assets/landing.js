@@ -26,9 +26,11 @@
 
   async function api(path, method = "GET", body = null, token = "", tenant = "") {
     const headers = { "Content-Type": "application/json" };
+
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
+
     if (tenant) {
       headers["X-Tenant-Merchant-Id"] = tenant;
     }
@@ -59,7 +61,7 @@
     localStorage.removeItem("fresh2u_user");
   }
 
-  async function autoRedirectIfLoggedIn() {
+  async function showSessionHintIfLoggedIn() {
     const token = localStorage.getItem("fresh2u_token") || "";
     if (!token) return;
 
@@ -67,10 +69,14 @@
 
     try {
       const result = await api("/api/v1/auth/me", "GET", null, token, tenant);
-      const user = result?.data;
-      if (user?.role) {
-        window.location.href = roleTarget(user.role);
-      }
+      const user = result?.data || null;
+      if (!user?.role) return;
+
+      setStatus(
+        "loginStatus",
+        `已检测到登录身份：${user.display_name || user.email || user.id}（${user.role}）。首页保持展示，不会自动跳转。`,
+        "success"
+      );
     } catch (_) {
       clearAuth();
     }
@@ -95,11 +101,11 @@
         const tenant = tenantInput || user?.tenant_merchant_id || "";
 
         saveAuth(token, tenant, user);
-        setStatus("loginStatus", "登录成功，正在进入工作台...", "success");
+        setStatus("loginStatus", "登录成功，正在进入角色工作台...", "success");
 
         window.setTimeout(() => {
           window.location.href = roleTarget(user?.role || "");
-        }, 260);
+        }, 220);
       } catch (error) {
         setStatus("loginStatus", error.message || "登录失败", "error");
       }
@@ -169,6 +175,6 @@
     bindRegisterForm();
     bindRoleLinks();
     bindRevealMotion();
-    await autoRedirectIfLoggedIn();
+    await showSessionHintIfLoggedIn();
   });
 })();

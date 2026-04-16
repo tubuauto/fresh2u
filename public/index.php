@@ -19,7 +19,7 @@ if ($currentPath === '/health') {
 }
 
 if ($request->method === 'GET') {
-    if ($currentPath === '/') {
+    if ($currentPath === '/' || $currentPath === '/index.php') {
         servePublicFile(__DIR__ . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'home.html');
         exit;
     }
