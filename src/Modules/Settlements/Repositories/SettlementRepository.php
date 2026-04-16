@@ -164,4 +164,36 @@ final class SettlementRepository
 
         return $stmt->fetchAll();
     }
+    public function listSettlements(string $tenantMerchantId, array $filters, int $limit): array
+    {
+        $sql = 'SELECT * FROM settlements WHERE tenant_merchant_id = :tenant_merchant_id';
+        $params = ['tenant_merchant_id' => $tenantMerchantId];
+
+        if (!empty($filters['owner_type'])) {
+            $sql .= ' AND owner_type = :owner_type';
+            $params['owner_type'] = (string) $filters['owner_type'];
+        }
+
+        if (!empty($filters['owner_id'])) {
+            $sql .= ' AND owner_id = :owner_id';
+            $params['owner_id'] = (string) $filters['owner_id'];
+        }
+
+        if (!empty($filters['state'])) {
+            $sql .= ' AND state = :state';
+            $params['state'] = (string) $filters['state'];
+        }
+
+        $sql .= ' ORDER BY created_at DESC LIMIT :limit';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', max(1, min($limit, 200)), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
 }
+

@@ -122,7 +122,28 @@ final class WithdrawalService
             throw $e;
         }
     }
+    public function listWithdrawals(array $actor, string $tenantMerchantId, array $query): array
+    {
+        $filters = [
+            'owner_type' => (string) ($query['owner_type'] ?? ''),
+            'owner_id' => (string) ($query['owner_id'] ?? ''),
+            'status' => (string) ($query['status'] ?? ''),
+        ];
 
+        $role = (string) ($actor['role'] ?? '');
+        if (!in_array($role, ['admin', 'merchant'], true)) {
+            if ($filters['owner_type'] === '') {
+                $filters['owner_type'] = $this->ownerTypeFromRole($role);
+            }
+
+            if ($filters['owner_id'] === '') {
+                $filters['owner_id'] = (string) $actor['id'];
+            }
+        }
+
+        $limit = (int) ($query['limit'] ?? 50);
+        return $this->repository->listByTenant($tenantMerchantId, $filters, max(1, min($limit, 200)));
+    }
     public function getWithdrawal(string $withdrawalId): array
     {
         $request = $this->repository->findById($withdrawalId);
@@ -146,3 +167,4 @@ final class WithdrawalService
         };
     }
 }
+

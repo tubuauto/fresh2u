@@ -229,4 +229,78 @@ final class OrderRepository
         $stmt = $this->pdo->prepare('UPDATE leader_orders SET status = :status, updated_at = NOW() WHERE id = :id');
         $stmt->execute(['id' => $id, 'status' => $status]);
     }
+    public function listMemberOrders(string $tenantMerchantId, array $filters, int $limit): array
+    {
+        $sql = 'SELECT * FROM member_orders WHERE tenant_merchant_id = :tenant_merchant_id';
+        $params = ['tenant_merchant_id' => $tenantMerchantId];
+
+        if (!empty($filters['leader_user_id'])) {
+            $sql .= ' AND leader_user_id = :leader_user_id';
+            $params['leader_user_id'] = (string) $filters['leader_user_id'];
+        }
+
+        if (!empty($filters['customer_user_id'])) {
+            $sql .= ' AND customer_user_id = :customer_user_id';
+            $params['customer_user_id'] = (string) $filters['customer_user_id'];
+        }
+
+        if (!empty($filters['status'])) {
+            $sql .= ' AND status = :status';
+            $params['status'] = (string) $filters['status'];
+        }
+
+        if (!empty($filters['payment_status'])) {
+            $sql .= ' AND payment_status = :payment_status';
+            $params['payment_status'] = (string) $filters['payment_status'];
+        }
+
+        if (!empty($filters['collection_status'])) {
+            $sql .= ' AND collection_status = :collection_status';
+            $params['collection_status'] = (string) $filters['collection_status'];
+        }
+
+        $sql .= ' ORDER BY created_at DESC LIMIT :limit';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', max(1, min($limit, 200)), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
+    public function listLeaderOrders(string $tenantMerchantId, array $filters, int $limit): array
+    {
+        $sql = 'SELECT * FROM leader_orders WHERE tenant_merchant_id = :tenant_merchant_id';
+        $params = ['tenant_merchant_id' => $tenantMerchantId];
+
+        if (!empty($filters['merchant_id'])) {
+            $sql .= ' AND merchant_id = :merchant_id';
+            $params['merchant_id'] = (string) $filters['merchant_id'];
+        }
+
+        if (!empty($filters['leader_user_id'])) {
+            $sql .= ' AND leader_user_id = :leader_user_id';
+            $params['leader_user_id'] = (string) $filters['leader_user_id'];
+        }
+
+        if (!empty($filters['status'])) {
+            $sql .= ' AND status = :status';
+            $params['status'] = (string) $filters['status'];
+        }
+
+        $sql .= ' ORDER BY created_at DESC LIMIT :limit';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', max(1, min($limit, 200)), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
 }
+

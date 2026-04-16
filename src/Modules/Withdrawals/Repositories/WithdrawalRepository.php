@@ -61,4 +61,36 @@ final class WithdrawalRepository
             'remark' => $remark,
         ]);
     }
+    public function listByTenant(string $tenantMerchantId, array $filters, int $limit): array
+    {
+        $sql = 'SELECT * FROM withdrawal_requests WHERE tenant_merchant_id = :tenant_merchant_id';
+        $params = ['tenant_merchant_id' => $tenantMerchantId];
+
+        if (!empty($filters['owner_type'])) {
+            $sql .= ' AND owner_type = :owner_type';
+            $params['owner_type'] = (string) $filters['owner_type'];
+        }
+
+        if (!empty($filters['owner_id'])) {
+            $sql .= ' AND owner_id = :owner_id';
+            $params['owner_id'] = (string) $filters['owner_id'];
+        }
+
+        if (!empty($filters['status'])) {
+            $sql .= ' AND status = :status';
+            $params['status'] = (string) $filters['status'];
+        }
+
+        $sql .= ' ORDER BY created_at DESC LIMIT :limit';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', max(1, min($limit, 200)), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
 }
+

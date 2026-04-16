@@ -113,7 +113,23 @@ final class FulfillmentService
         $this->repository->updateMemberOrderStatus((string) $payload['member_order_id'], 'out_for_delivery');
         return $task;
     }
+    public function listDeliveryTasks(array $actor, string $tenantMerchantId, array $query): array
+    {
+        $filters = [
+            'member_order_id' => (string) ($query['member_order_id'] ?? ''),
+            'leader_order_id' => (string) ($query['leader_order_id'] ?? ''),
+            'pickup_hub_id' => (string) ($query['pickup_hub_id'] ?? ''),
+            'driver_user_id' => (string) ($query['driver_user_id'] ?? ''),
+            'status' => (string) ($query['status'] ?? ''),
+        ];
 
+        if (($actor['role'] ?? '') === 'driver') {
+            $filters['driver_user_id'] = (string) $actor['id'];
+        }
+
+        $limit = (int) ($query['limit'] ?? 50);
+        return $this->repository->listDeliveryTasks($tenantMerchantId, $filters, max(1, min($limit, 200)));
+    }
     public function updateDeliveryStatus(string $taskId, array $payload): array
     {
         $task = $this->repository->findDeliveryTask($taskId);
@@ -136,3 +152,4 @@ final class FulfillmentService
         return $this->repository->findDeliveryTask($taskId) ?? $task;
     }
 }
+

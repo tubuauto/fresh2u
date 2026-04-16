@@ -88,7 +88,45 @@ final class OrderService
         $order['items'] = $items;
         return $order;
     }
+    public function listMemberOrders(array $actor, string $tenantMerchantId, array $query): array
+    {
+        $filters = [
+            'leader_user_id' => (string) ($query['leader_user_id'] ?? ''),
+            'customer_user_id' => (string) ($query['customer_user_id'] ?? ''),
+            'status' => (string) ($query['status'] ?? ''),
+            'payment_status' => (string) ($query['payment_status'] ?? ''),
+            'collection_status' => (string) ($query['collection_status'] ?? ''),
+        ];
 
+        if (($actor['role'] ?? '') === 'customer') {
+            $filters['customer_user_id'] = (string) $actor['id'];
+        }
+
+        if (($actor['role'] ?? '') === 'leader' && $filters['leader_user_id'] === '') {
+            $filters['leader_user_id'] = (string) $actor['id'];
+        }
+
+        $limit = (int) ($query['limit'] ?? 50);
+
+        return $this->orderRepository->listMemberOrders($tenantMerchantId, $filters, max(1, min($limit, 200)));
+    }
+
+    public function listLeaderOrders(array $actor, string $tenantMerchantId, array $query): array
+    {
+        $filters = [
+            'merchant_id' => (string) ($query['merchant_id'] ?? ''),
+            'leader_user_id' => (string) ($query['leader_user_id'] ?? ''),
+            'status' => (string) ($query['status'] ?? ''),
+        ];
+
+        if (($actor['role'] ?? '') === 'leader' && $filters['leader_user_id'] === '') {
+            $filters['leader_user_id'] = (string) $actor['id'];
+        }
+
+        $limit = (int) ($query['limit'] ?? 50);
+
+        return $this->orderRepository->listLeaderOrders($tenantMerchantId, $filters, max(1, min($limit, 200)));
+    }
     public function applyCoupon(string $memberOrderId, array $payload, array $actor): array
     {
         $order = $this->getMemberOrder($memberOrderId);
@@ -301,3 +339,4 @@ final class OrderService
         return $this->getLeaderOrder($leaderOrderId);
     }
 }
+

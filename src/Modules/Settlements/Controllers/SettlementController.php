@@ -23,7 +23,20 @@ final class SettlementController
         $data = $this->service->createSettlement($request->body, $tenant);
         return [201, ['data' => $data]];
     }
+    public function listSettlements(Request $request): array
+    {
+        $user = $this->authService->requireUser($request, ['admin', 'merchant', 'leader', 'pickup_hub', 'driver', 'supply_partner']);
+        $tenant = (string) ($request->header('x-tenant-merchant-id') ?? $user['tenant_merchant_id'] ?? '');
+        $data = $this->service->listSettlements($user, $tenant, $request->query);
+        return [200, ['data' => $data]];
+    }
 
+    public function getSettlement(Request $request, array $params): array
+    {
+        $this->authService->requireUser($request, ['admin', 'merchant', 'leader', 'pickup_hub', 'driver', 'supply_partner']);
+        $data = $this->service->getSettlement($params['id']);
+        return [200, ['data' => $data]];
+    }
     public function reviewSettlement(Request $request, array $params): array
     {
         $user = $this->authService->requireUser($request, ['admin', 'merchant']);
@@ -47,3 +60,4 @@ final class SettlementController
         return [200, ['data' => $data]];
     }
 }
+

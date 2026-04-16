@@ -40,7 +40,13 @@ final class WalletController
         $order = $this->rechargeService->createOnlineRecharge($request->body, $user);
         return [201, ['data' => $order]];
     }
-
+    public function listRecharges(Request $request): array
+    {
+        $user = $this->authService->requireUser($request, ['customer', 'leader', 'merchant', 'pickup_hub', 'admin']);
+        $tenantMerchantId = (string) ($request->header('x-tenant-merchant-id') ?? $user['tenant_merchant_id'] ?? '');
+        $orders = $this->rechargeService->listRecharges($user, $tenantMerchantId, $request->query);
+        return [200, ['data' => $orders]];
+    }
     public function paymentCallback(Request $request, array $params): array
     {
         $this->authService->requireUser($request, ['admin', 'merchant']);
@@ -69,3 +75,4 @@ final class WalletController
         return [200, ['data' => $order]];
     }
 }
+

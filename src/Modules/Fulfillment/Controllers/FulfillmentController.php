@@ -54,7 +54,13 @@ final class FulfillmentController
         $data = $this->service->createDeliveryTask($request->body, $user, $tenant);
         return [201, ['data' => $data]];
     }
-
+    public function listDeliveryTasks(Request $request): array
+    {
+        $user = $this->authService->requireUser($request, ['leader', 'pickup_hub', 'driver', 'merchant', 'admin']);
+        $tenant = (string) ($request->header('x-tenant-merchant-id') ?? $user['tenant_merchant_id'] ?? '');
+        $data = $this->service->listDeliveryTasks($user, $tenant, $request->query);
+        return [200, ['data' => $data]];
+    }
     public function updateDeliveryStatus(Request $request, array $params): array
     {
         $this->authService->requireUser($request, ['driver', 'leader', 'admin']);
@@ -62,3 +68,4 @@ final class FulfillmentController
         return [200, ['data' => $data]];
     }
 }
+

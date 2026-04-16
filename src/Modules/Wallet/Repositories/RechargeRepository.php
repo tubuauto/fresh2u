@@ -88,4 +88,46 @@ final class RechargeRepository
             'mark_paid' => $markPaid,
         ]);
     }
+    public function listByTenant(string $tenantMerchantId, array $filters, int $limit): array
+    {
+        $sql = 'SELECT * FROM recharge_orders WHERE tenant_merchant_id = :tenant_merchant_id';
+        $params = ['tenant_merchant_id' => $tenantMerchantId];
+
+        if (!empty($filters['customer_user_id'])) {
+            $sql .= ' AND customer_user_id = :customer_user_id';
+            $params['customer_user_id'] = (string) $filters['customer_user_id'];
+        }
+
+        if (!empty($filters['status'])) {
+            $sql .= ' AND status = :status';
+            $params['status'] = (string) $filters['status'];
+        }
+
+        if (!empty($filters['payment_method'])) {
+            $sql .= ' AND payment_method = :payment_method';
+            $params['payment_method'] = (string) $filters['payment_method'];
+        }
+
+        if (!empty($filters['initiated_by_id'])) {
+            $sql .= ' AND initiated_by_id = :initiated_by_id';
+            $params['initiated_by_id'] = (string) $filters['initiated_by_id'];
+        }
+
+        if (!empty($filters['received_by_id'])) {
+            $sql .= ' AND received_by_id = :received_by_id';
+            $params['received_by_id'] = (string) $filters['received_by_id'];
+        }
+
+        $sql .= ' ORDER BY created_at DESC LIMIT :limit';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', max(1, min($limit, 200)), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
 }
+

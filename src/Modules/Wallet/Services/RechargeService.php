@@ -186,7 +186,28 @@ final class RechargeService
 
         return $this->creditConfirmedCashOrder($id, $actor['id']);
     }
+    public function listRecharges(array $actor, string $tenantMerchantId, array $query): array
+    {
+        $filters = [
+            'customer_user_id' => (string) ($query['customer_user_id'] ?? ''),
+            'status' => (string) ($query['status'] ?? ''),
+            'payment_method' => (string) ($query['payment_method'] ?? ''),
+            'initiated_by_id' => (string) ($query['initiated_by_id'] ?? ''),
+            'received_by_id' => (string) ($query['received_by_id'] ?? ''),
+        ];
 
+        $role = (string) ($actor['role'] ?? '');
+        if ($role === 'customer') {
+            $filters['customer_user_id'] = (string) $actor['id'];
+        }
+
+        if (in_array($role, ['leader', 'pickup_hub'], true) && $filters['initiated_by_id'] === '' && $filters['received_by_id'] === '') {
+            $filters['initiated_by_id'] = (string) $actor['id'];
+        }
+
+        $limit = (int) ($query['limit'] ?? 50);
+        return $this->rechargeRepository->listByTenant($tenantMerchantId, $filters, max(1, min($limit, 200)));
+    }
     private function creditConfirmedCashOrder(string $id, ?string $reviewedBy = null): array
     {
         $order = $this->mustFind($id);
@@ -233,3 +254,4 @@ final class RechargeService
         return $order;
     }
 }
+

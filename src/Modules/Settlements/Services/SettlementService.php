@@ -156,7 +156,28 @@ final class SettlementService
 
         return $this->getSettlement($settlementId);
     }
+    public function listSettlements(array $actor, string $tenantMerchantId, array $query): array
+    {
+        $filters = [
+            'owner_type' => (string) ($query['owner_type'] ?? ''),
+            'owner_id' => (string) ($query['owner_id'] ?? ''),
+            'state' => (string) ($query['state'] ?? ''),
+        ];
 
+        $role = (string) ($actor['role'] ?? '');
+        if (!in_array($role, ['admin', 'merchant'], true)) {
+            if ($filters['owner_type'] === '') {
+                $filters['owner_type'] = $this->ownerTypeFromRole($role);
+            }
+
+            if ($filters['owner_id'] === '') {
+                $filters['owner_id'] = (string) $actor['id'];
+            }
+        }
+
+        $limit = (int) ($query['limit'] ?? 50);
+        return $this->repository->listSettlements($tenantMerchantId, $filters, max(1, min($limit, 200)));
+    }
     public function listLedgerEntries(string $tenantMerchantId, int $limit): array
     {
         return $this->repository->listLedgerEntries($tenantMerchantId, max(1, min($limit, 200)));
@@ -171,4 +192,16 @@ final class SettlementService
         $settlement['items'] = $this->repository->settlementItems($settlementId);
         return $settlement;
     }
+    private function ownerTypeFromRole(string $role): string
+    {
+        return match ($role) {
+            'leader' => 'leader',
+            'pickup_hub' => 'pickup_hub',
+            'driver' => 'driver',
+            'supply_partner' => 'supply_partner',
+            'merchant' => 'merchant',
+            default => '',
+        };
+    }
 }
+

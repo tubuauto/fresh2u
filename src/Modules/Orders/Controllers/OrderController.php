@@ -23,7 +23,21 @@ final class OrderController
         $order = $this->orderService->createMemberOrder($request->body, $user, $tenantMerchantId);
         return [201, ['data' => $order]];
     }
+    public function listMemberOrders(Request $request): array
+    {
+        $user = $this->authService->requireUser($request, ['customer', 'leader', 'merchant', 'pickup_hub', 'driver', 'supply_partner', 'admin']);
+        $tenantMerchantId = (string) ($request->header('x-tenant-merchant-id') ?? $user['tenant_merchant_id'] ?? '');
+        $orders = $this->orderService->listMemberOrders($user, $tenantMerchantId, $request->query);
+        return [200, ['data' => $orders]];
+    }
 
+    public function listLeaderOrders(Request $request): array
+    {
+        $user = $this->authService->requireUser($request, ['leader', 'merchant', 'pickup_hub', 'supply_partner', 'admin']);
+        $tenantMerchantId = (string) ($request->header('x-tenant-merchant-id') ?? $user['tenant_merchant_id'] ?? '');
+        $orders = $this->orderService->listLeaderOrders($user, $tenantMerchantId, $request->query);
+        return [200, ['data' => $orders]];
+    }
     public function getMemberOrder(Request $request, array $params): array
     {
         $this->authService->requireUser($request);
@@ -82,3 +96,4 @@ final class OrderController
         return [200, ['data' => $order]];
     }
 }
+

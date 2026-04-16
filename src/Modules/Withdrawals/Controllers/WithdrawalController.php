@@ -23,7 +23,13 @@ final class WithdrawalController
         $data = $this->service->createWithdrawal($request->body, $user, $tenant);
         return [201, ['data' => $data]];
     }
-
+    public function listWithdrawals(Request $request): array
+    {
+        $user = $this->authService->requireUser($request, ['admin', 'merchant', 'leader', 'pickup_hub', 'driver', 'supply_partner']);
+        $tenant = (string) ($request->header('x-tenant-merchant-id') ?? $user['tenant_merchant_id'] ?? '');
+        $data = $this->service->listWithdrawals($user, $tenant, $request->query);
+        return [200, ['data' => $data]];
+    }
     public function reviewWithdrawal(Request $request, array $params): array
     {
         $reviewer = $this->authService->requireUser($request, ['admin', 'merchant']);
@@ -38,3 +44,4 @@ final class WithdrawalController
         return [200, ['data' => $data]];
     }
 }
+

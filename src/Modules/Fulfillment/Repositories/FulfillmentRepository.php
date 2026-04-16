@@ -184,4 +184,46 @@ final class FulfillmentRepository
         $stmt = $this->pdo->prepare('UPDATE member_orders SET status = :status, updated_at = NOW() WHERE id = :id');
         $stmt->execute(['id' => $memberOrderId, 'status' => $status]);
     }
+    public function listDeliveryTasks(string $tenantMerchantId, array $filters, int $limit): array
+    {
+        $sql = 'SELECT * FROM delivery_tasks WHERE tenant_merchant_id = :tenant_merchant_id';
+        $params = ['tenant_merchant_id' => $tenantMerchantId];
+
+        if (!empty($filters['member_order_id'])) {
+            $sql .= ' AND member_order_id = :member_order_id';
+            $params['member_order_id'] = (string) $filters['member_order_id'];
+        }
+
+        if (!empty($filters['leader_order_id'])) {
+            $sql .= ' AND leader_order_id = :leader_order_id';
+            $params['leader_order_id'] = (string) $filters['leader_order_id'];
+        }
+
+        if (!empty($filters['pickup_hub_id'])) {
+            $sql .= ' AND pickup_hub_id = :pickup_hub_id';
+            $params['pickup_hub_id'] = (string) $filters['pickup_hub_id'];
+        }
+
+        if (!empty($filters['driver_user_id'])) {
+            $sql .= ' AND driver_user_id = :driver_user_id';
+            $params['driver_user_id'] = (string) $filters['driver_user_id'];
+        }
+
+        if (!empty($filters['status'])) {
+            $sql .= ' AND status = :status';
+            $params['status'] = (string) $filters['status'];
+        }
+
+        $sql .= ' ORDER BY created_at DESC LIMIT :limit';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', max(1, min($limit, 200)), PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
 }
+
